@@ -226,10 +226,14 @@ class GameRunToAnthill(QWidget):
 
     def updateFieldFocusPoint(self):
         for ant in self.ants:
-            if (self.width() - (ant.motion.point.x() + + self.field.focus_point.x())) \
+            if (self.width() - (ant.motion.point.x() + self.field.focus_point.x())) \
                     < self.field.critical_distance_before_screen_end:
                 self.field.focus_point.setX(self.field.focus_point.x() - self.field.field_motion_step)
                 return
+            """if (ant.motion.point.x() + self.field.focus_point.x()) \
+                    < self.field.critical_distance_before_screen_end:
+                self.field.focus_point.setX(self.field.focus_point.x() + self.field.field_motion_step)
+                return"""
 
     def updateConstants(self):
         self.field.critical_distance_before_screen_end = self.width() // 5 * 2

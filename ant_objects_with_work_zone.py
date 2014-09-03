@@ -47,14 +47,34 @@ class AntObjectsWithWorkZoneByXOptimisation():
 
     def updateWorkZone(self, min_x, max_x, *args):
         """*args for overriding"""
-        while ((self.work_zone_right_bound + 1) < self.getNumberOfObjects()) and \
-              (self.objects[self.work_zone_right_bound + 1].point.x() < max_x):
-                self.work_zone_right_bound += 1
 
-        while (self.work_zone_left_bound < self.getNumberOfObjects()) and \
-              ((self.objects[self.work_zone_left_bound].point.x() + self.objects[self.work_zone_left_bound].width())
-                < min_x):
-                    self.work_zone_left_bound += 1
+        
+
+        if (self.work_zone_right_bound == -1 or self.objects[self.work_zone_right_bound].point.x() < max_x): 
+            while ((self.work_zone_right_bound + 1) < self.getNumberOfObjects()) and \
+                  (self.objects[self.work_zone_right_bound + 1].point.x() < max_x):
+                    self.work_zone_right_bound += 1
+        else:
+            while(self.work_zone_right_bound > -1 and self.objects[self.work_zone_right_bound].point.x() >= max_x):
+                self.work_zone_right_bound -= 1
+
+        if(self.work_zone_right_bound < self.work_zone_left_bound):
+            if(self.work_zone_right_bound == -1):
+                self.work_zone_left_bound = 0
+            else:
+                self.work_zone_left_bound = self.work_zone_right_bound + 1
+
+        if(self.work_zone_left_bound == self.getNumberOfObjects()):
+            while(self.work_zone_left_bound > 0 and self.objects[self.work_zone_left_bound - 1].point.x() + self.objects[self.work_zone_left_bound - 1].width() > min_x):
+                self.work_zone_left_bound -= 1
+        elif (self.objects[self.work_zone_left_bound].point.x() + self.objects[self.work_zone_left_bound].width() > min_x):
+            while(self.work_zone_left_bound > 0 and self.objects[self.work_zone_left_bound - 1].point.x() + self.objects[self.work_zone_left_bound - 1].width() > min_x):
+                self.work_zone_left_bound -= 1
+        else:
+            while (self.work_zone_left_bound < self.getNumberOfObjects()) and \
+                  ((self.objects[self.work_zone_left_bound].point.x() + self.objects[self.work_zone_left_bound].width())
+                    < min_x):
+                        self.work_zone_left_bound += 1
 
     def isWorkZoneEmpty(self):
         return self.work_zone_left_bound > self.work_zone_right_bound
