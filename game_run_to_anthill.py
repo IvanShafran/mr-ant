@@ -155,7 +155,7 @@ class GameRunToAnthill(QWidget):
                                                      self.borders.height, self.field.height - self.borders.height)
 
     def zombieInit(self):
-        self.message.add('zombie_waking_up', '.\\pictures\\messages\\zombie_waking_up.png')
+        self.message.add('zombie_are_waking_up', '.\\pictures\\messages\\zombie_are_waking_up.png')
         names = tuple(('red_zombie', 'blue_zombie', 'green_zombie'))
         for index in range(self.field.number_of_zombie_ants):
             self.ants.append(ZombieAnt(names[index], 30, 60))
@@ -256,7 +256,7 @@ class GameRunToAnthill(QWidget):
                 self._moveAnt(ant, ant.move)
 
     def buildZombiePath(self):
-        self.message.sendMessage('zombie_waking_up')
+        self.message.sendMessage('zombie_are_waking_up')
         self.repaint()
         for ant in self.ants:
             if ant.zombie:
