@@ -4,27 +4,13 @@ import sys
 from PySide.QtGui import QWidget, QPainter, QApplication, QPixmap
 from PySide.QtCore import QTimer, QObject, SIGNAL, Qt, QPoint
 from ant import Ant
+from ant_object import AntObject
 from ant_objects_with_work_zone import AntObjectsWithWorkZoneByXOptimisation
 from ant_message import AntMessage
 from reverse_calculation import AntReverseCalculation
 from ant_geometry import isAntIntersectOtherAnts, isAntIntersectAntObjectsWithWorkZone
 from zombie_ant import ZombieAnt
-
-
-class FieldProperty():
-    def __init__(self):
-        self.focus_point = QPoint()
-        self.width = 0
-        self.height = 0
-        self.number_of_barriers = 0
-        self.number_of_background_pictures = 0
-        self.number_of_ants = 0
-        self.number_of_zombie_ants = 0
-        self.start_line_x = 0
-        self.finish_line_x = 0
-        self.field_motion_step = 0
-        self.distance_before_first_barrier = 200
-        self.critical_distance_before_screen_end = 400
+from game_run_to_anthill_settings import RunToAnthillSettings
 
 
 class AntBordersForRace(list):
@@ -67,17 +53,18 @@ class GameRunToAnthill(QWidget):
         self.close()
 
     def fieldInit(self):
-        self.field = FieldProperty()
-        self.field.focus_point = QPoint(0, 0)
+        self.field = RunToAnthillSettings()
         self.field.height = 500
-        self.field.width = 8000
-        self.field.number_of_barriers = 120
+        self.field.width = 1000
+        self.field.number_of_barriers = 20
         self.field.start_line_x = 50
         self.field.finish_line_x = self.field.width - 80
         self.field.number_of_background_pictures = 0
         self.field.field_motion_step = 2
         self.field.number_of_ants = 1
         self.field.number_of_zombie_ants = 1
+        self.field.distance_before_first_barrier = 200
+        self.field.screen_movement_step = 2
 
     def windowInit(self):
         self.setMaximumHeight(self.field.height + self.field.focus_point.y())
@@ -86,6 +73,7 @@ class GameRunToAnthill(QWidget):
 
     def otherInit(self):
         self.pressed_keys = set()
+
     def timerInit(self):
         self.reverse_calculation = AntReverseCalculation()
 
@@ -111,12 +99,12 @@ class GameRunToAnthill(QWidget):
         for index in range(self.field.number_of_ants):
             self.ants.append(Ant(names[index]))
             self.ants[index].picture.load('.\\pictures\\ants\\' + names[index] + '_ant.png')
-            self.ants[index].motion.point = QPoint(0,
+            self.ants[index].point = QPoint(0,
                 self.field.height // (self.field.number_of_ants + self.field.number_of_zombie_ants + 1) * (index + 1))
-            self.ants[index].motion.setKeyUp(keys[index][0])
-            self.ants[index].motion.setKeyDown(keys[index][1])
-            self.ants[index].motion.setKeyLeft(keys[index][2])
-            self.ants[index].motion.setKeyRight(keys[index][3])
+            self.ants[index].key_up = keys[index][0]
+            self.ants[index].key_down = keys[index][1]
+            self.ants[index].key_left = keys[index][2]
+            self.ants[index].key_right = keys[index][3]
             self.message.add(self.ants[index].name + '_ant_wins', '.\\pictures\\messages\\'
                              + self.ants[index].name + '_ant_wins.png')
 
@@ -131,8 +119,8 @@ class GameRunToAnthill(QWidget):
             self.borders[1].addPicture('.\\pictures\\borders\\border_' + str(x) + '.bmp')
 
         for x in range(0, self.field.width, self.borders.width):
-            self.borders[0].addObject(QPoint(x, 0), 0)
-            self.borders[1].addObject(QPoint(x, self.field.height - self.borders.height), 1)
+            self.borders[0].addObject(AntObject(QPoint(x, 0)), 0)
+            self.borders[1].addObject(AntObject(QPoint(x, self.field.height - self.borders.height)), 1)
         self.borders[0].setRandomPictures()
         self.borders[1].setRandomPictures()
 
@@ -161,7 +149,7 @@ class GameRunToAnthill(QWidget):
             self.ants.append(ZombieAnt(names[index], 30, 60))
             self.ants[-1].zombie = True
             self.ants[-1].picture.load('.\\pictures\\zombie_ants\\' + names[index] + '_ant.png')
-            self.ants[-1].motion.point = QPoint(0,
+            self.ants[-1].point = QPoint(0,
                 self.field.height // (self.field.number_of_ants + self.field.number_of_zombie_ants + 1) *
                 (index + self.field.number_of_ants + 1))
 
@@ -181,7 +169,7 @@ class GameRunToAnthill(QWidget):
 
     def paintAnts(self, painter):
         for ant in self.ants:
-            painter.drawPixmap(ant.motion.point + self.field.focus_point, ant.picture)
+            painter.drawPixmap(ant.point + self.field.focus_point, ant.picture)
 
     def paintBarriers(self, painter):
         for barrier_item in self.barriers.workZone():
@@ -226,11 +214,11 @@ class GameRunToAnthill(QWidget):
 
     def updateFieldFocusPoint(self):
         for ant in self.ants:
-            if (self.width() - (ant.motion.point.x() + self.field.focus_point.x())) \
+            if (self.width() - (ant.point.x() + self.field.focus_point.x())) \
                     < self.field.critical_distance_before_screen_end:
-                self.field.focus_point.setX(self.field.focus_point.x() - self.field.field_motion_step)
+                self.field.focus_point.setX(self.field.focus_point.x() - self.field.screen_movement_step)
                 return
-            """if (ant.motion.point.x() + self.field.focus_point.x()) \
+            """if (ant.point.x() + self.field.focus_point.x()) \
                     < self.field.critical_distance_before_screen_end:
                 self.field.focus_point.setX(self.field.focus_point.x() + self.field.field_motion_step)
                 return"""
@@ -252,14 +240,14 @@ class GameRunToAnthill(QWidget):
 
     def moveZombie(self):
         for ant in self.ants:
-            if ant.zombie:
+            if ant.isZombie():
                 self._moveAnt(ant, ant.move)
 
     def buildZombiePath(self):
         self.message.sendMessage('zombie_are_waking_up')
         self.repaint()
         for ant in self.ants:
-            if ant.zombie:
+            if ant.isZombie():
                 ant.findWayToVerticalLine(self.field.finish_line_x + 100, self.isAntIntersectAnything)
         self.message.noMessage()
         self.repaint()
@@ -274,13 +262,15 @@ class GameRunToAnthill(QWidget):
         self.repaint()
 
     def fastStart(self):
+        if not self.game_started:
+            self.buildZombiePath()
         self.game_started = True
-        self.buildZombiePath()
         self.reverse_calculation.startReverseCalculation(0, self.reverseCalculationWorker)
 
     def start(self):
+        if not self.game_started:
+            self.buildZombiePath()
         self.game_started = True
-        self.buildZombiePath()
         if self.timer.isActive():
             self.fastStart()
         else:
@@ -326,7 +316,7 @@ class GameRunToAnthill(QWidget):
                 self.message.sendMessage(ant.name + '_ant_wins')
 
     def isAntFinished(self, ant):
-        return ant.motion.point.x() + ant.width() >= self.field.finish_line_x
+        return ant.point.x() + ant.width() >= self.field.finish_line_x
 
     def isAntIntersectBarriers(self, ant, check_only_work_zone=False):
         return isAntIntersectAntObjectsWithWorkZone(ant, self.barriers, check_only_work_zone)
@@ -344,35 +334,35 @@ class GameRunToAnthill(QWidget):
 
     def _moveAnt(self, ant, doStep, diagonal_direction=False):
         if diagonal_direction:
-            max_step_value = ant.motion.step_value // 2
+            max_step_value = ant.step_value // 2
         else:
-            max_step_value = ant.motion.step_value
+            max_step_value = ant.step_value
 
         for step_value in range(max_step_value):
             doStep(1)
             if self.isAntIntersectAnything(ant, True):
-                ant.motion.cancelLastStep()
+                ant.cancelLastStep()
                 return
 
-    def _processPressedMotionKey(self, ant, key, doStep, diagonal_direction):
+    def _processPressedMovementKey(self, ant, key, doStep, diagonal_direction):
         if key not in self.pressed_keys:
             return
 
         self._moveAnt(ant, doStep, diagonal_direction)
 
-    def processPressedMotionKeys(self):
+    def processPressedMovementKeys(self):
         for ant in self.ants:
-            if not ant.zombie:
-                motion_key_set = {ant.motion.key_up, ant.motion.key_down, ant.motion.key_left, ant.motion.key_right}
-                diagonal_direction = len(motion_key_set & self.pressed_keys) > 1
+            if not ant.isZombie():
+                movement_key_set = {ant.key_up, ant.key_down, ant.key_left, ant.key_right}
+                diagonal_direction = len(movement_key_set & self.pressed_keys) > 1
 
-                self._processPressedMotionKey(ant, ant.motion.key_up, ant.motion.up, diagonal_direction)
-                self._processPressedMotionKey(ant, ant.motion.key_down, ant.motion.down, diagonal_direction)
-                self._processPressedMotionKey(ant, ant.motion.key_left, ant.motion.left, diagonal_direction)
-                self._processPressedMotionKey(ant, ant.motion.key_right, ant.motion.right, diagonal_direction)
+                self._processPressedMovementKey(ant, ant.key_up, ant.up, diagonal_direction)
+                self._processPressedMovementKey(ant, ant.key_down, ant.down, diagonal_direction)
+                self._processPressedMovementKey(ant, ant.key_left, ant.left, diagonal_direction)
+                self._processPressedMovementKey(ant, ant.key_right, ant.right, diagonal_direction)
 
     def processPressedKeys(self):
-        self.processPressedMotionKeys()
+        self.processPressedMovementKeys()
 
     def _addPlayer(self):
         if self.field.number_of_ants < 3:

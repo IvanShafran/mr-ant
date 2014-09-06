@@ -3,23 +3,23 @@ from PySide.QtGui import QPixmap
 
 class AntMessage():
     def __init__(self):
-        self._messages = dict()
-        self._message = 'no_message'
+        self.__messages = dict()
+        self.__message_text = 'no_message'
 
     def sendMessage(self, message):
-        self._message = message
+        self.__message_text = message
 
     def noMessage(self):
         self.sendMessage('no_message')
 
     def isThereMessage(self):
-        return not self._message == 'no_message'
+        return not self.__message_text == 'no_message'
 
     def add(self, message, picture_path):
-        self._messages[message] = QPixmap(picture_path)
+        self.__messages[message] = QPixmap(picture_path)
 
     def getMessageText(self):
-        return self._message
+        return self.__message_text
 
     def getMessagePicture(self):
-        return self._messages[self._message]
+        return self.__messages[self.__message_text]

@@ -10,11 +10,11 @@ def bfs(start_vertex, graph):
     distance[start_vertex] = 0
 
     while not queue_.empty():
-        vertex = queue_.get_nowait()
+        vertex = queue_.get()
         for incidence_vertex in graph[vertex]:
             if not was[incidence_vertex]:
                 was[incidence_vertex] = True
                 distance[incidence_vertex] = distance[vertex] + 1
-                queue_.put_nowait(incidence_vertex)
+                queue_.put(incidence_vertex)
 
     return distance

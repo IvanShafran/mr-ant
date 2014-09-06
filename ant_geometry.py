@@ -1,13 +1,12 @@
 from PySide.QtCore import QPoint
 
 
-def isObjectIntersectAnother(first_point, first_width, first_height,
-                             second_point, second_width, second_height):
-    first_up_left_corner = first_point
-    first_down_right_corner = first_point + QPoint(first_width, first_height)
+def isAntObjectIntersectAnother(first_object, second_object):
+    first_up_left_corner = first_object.point
+    first_down_right_corner = first_up_left_corner + QPoint(first_object.width(), first_object.height())
 
-    second_up_left_corner = second_point
-    second_down_right_corner = second_point + QPoint(second_width, second_height)
+    second_up_left_corner = second_object.point
+    second_down_right_corner = second_up_left_corner + QPoint(second_object.width(), second_object.height())
 
     if first_up_left_corner.x() > second_down_right_corner.x() or \
        first_down_right_corner.x() < second_up_left_corner.x() or \
@@ -20,9 +19,8 @@ def isObjectIntersectAnother(first_point, first_width, first_height,
 
 def isAntIntersectOtherAnts(ant, ants):
     for another_ant in ants:
-        if another_ant != ant and isObjectIntersectAnother(ant.motion.point, ant.width(), ant.height(),
-                                    another_ant.motion.point, another_ant.width(), another_ant.height()):
-            return True
+        if another_ant != ant and isAntObjectIntersectAnother(ant, another_ant):
+                return True
 
     return False
 
@@ -39,8 +37,7 @@ def isAntIntersectAntObjectsWithWorkZone(ant, ant_objects, check_only_work_zone=
         else:
             ant_object = ant_object_item
 
-        if isObjectIntersectAnother(ant.motion.point, ant.width(), ant.height(),
-                                    ant_object.point, ant_object.width(), ant_object.height()):
+        if isAntObjectIntersectAnother(ant, ant_object):
             return True
 
     return False

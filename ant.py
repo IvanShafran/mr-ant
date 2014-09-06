@@ -1,16 +1,11 @@
-from PySide.QtGui import QPixmap
-from ant_motion import AntMotion
+from ant_object_movement import AntObjectUserMovement
 
 
-class Ant():
+class Ant(AntObjectUserMovement):
     def __init__(self, name):
-        self.picture = QPixmap()
-        self.motion = AntMotion()
+        super(Ant, self).__init__()
         self.name = name
-        self.zombie = False
+        self.__is_zombie = False
 
-    def width(self):
-        return self.picture.width()
-
-    def height(self):
-        return self.picture.height()
+    def isZombie(self):
+        return self.__is_zombie

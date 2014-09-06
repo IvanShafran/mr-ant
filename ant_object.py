@@ -6,7 +6,10 @@ class AntObject():
     def __init__(self, point=QPoint(0, 0)):
         self.picture = QPixmap()
         self.point = point
-        self.enabled = True
+        self.__enabled = True
+
+    def setEnabled(self, enabled=True):
+        self.__enabled = enabled
 
     def width(self):
         return self.picture.width()

@@ -10,9 +10,9 @@ class _AStarNode():
     def __init__(self, vertex):
         self.vertex = vertex
         self.came_from = None
-        self.distance = 0 #distance
-        self.hce = 0 #heuristic cost estimate
-        self.sum = 0 #f(x) = distance + g(x)
+        self.distance = 0  # distance
+        self.hce = 0  # heuristic cost estimate
+        self.sum = 0  # sum(x) = distance + hce(x)
 
     def updateSum(self):
         self.sum = self.hce + self.distance
@@ -46,8 +46,7 @@ def _processVertex(processing_vertex, getDistance, getIncidenceList, getHeuristi
                 node_storage[incidence_vertex].distance = distance_to_vertex
                 node_storage[incidence_vertex].hce = getHeuristicCostEstimate(incidence_vertex)
                 node_storage[incidence_vertex].updateSum()
-                #node_queue.unfinished_tasks - priority_index
-                node_queue.put_nowait(tuple(((node_storage[incidence_vertex].sum, -node_queue.unfinished_tasks),
+                node_queue.put(tuple(((node_storage[incidence_vertex].sum, -node_queue.unfinished_tasks),
                                              incidence_vertex)))
 
 
@@ -60,7 +59,7 @@ def findWayByAStar(start, isFinish, getDistance, getIncidenceList, getHeuristicC
     findWayByAStar returns path(list) from start to finish
     """
     processed_vertices = set()
-    waiting_vertices = set((start, ))
+    waiting_vertices = {start, }
 
     node_queue = PriorityQueue()
     node_storage = dict()
@@ -71,7 +70,7 @@ def findWayByAStar(start, isFinish, getDistance, getIncidenceList, getHeuristicC
     node_queue.put_nowait(tuple(((node_storage[start].sum, 0), node_storage[start].vertex)))
 
     while len(waiting_vertices) != 0:
-        processing_vertex = node_queue.get_nowait()[1]  # item = ((priority number, priority_index), data).
+        processing_vertex = node_queue.get()[1]  # item = ((priority number, priority_index), data).
         while processing_vertex in processed_vertices:
             processing_vertex = node_queue.get_nowait()[1]
 
@@ -84,6 +83,7 @@ def findWayByAStar(start, isFinish, getDistance, getIncidenceList, getHeuristicC
     raise Exception("Path doesn't exist")
 
 
+#############################-testing-#####################################
 def _getRandomGraph(number_of_vertices):
     result = dict()
     for x in range(number_of_vertices):
