@@ -6,7 +6,14 @@ class AntObject():
     def __init__(self, point=QPoint(0, 0)):
         self.picture = QPixmap()
         self.point = point
+        self.__animated = False
         self.__enabled = True
+
+    def isAnimated(self):
+        return self.__animated
+
+    def isEnabled(self):
+        return self.__enabled
 
     def setEnabled(self, enabled=True):
         self.__enabled = enabled

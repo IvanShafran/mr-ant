@@ -3,6 +3,7 @@ from encodings.punycode import selective_find
 import sys
 from PySide.QtGui import QWidget, QPainter, QApplication, QPixmap
 from PySide.QtCore import QTimer, QObject, SIGNAL, Qt, QPoint
+import random
 from ant import Ant
 from ant_object import AntObject
 from ant_objects_with_work_zone import AntObjectsWithWorkZoneByXOptimisation
@@ -11,6 +12,7 @@ from reverse_calculation import AntReverseCalculation
 from ant_geometry import isAntIntersectOtherAnts, isAntIntersectAntObjectsWithWorkZone
 from zombie_ant import ZombieAnt
 from game_run_to_anthill_settings import RunToAnthillSettings
+from ant_object_animation import AntObjectAnimation
 
 
 class AntBordersForRace(list):
@@ -38,6 +40,7 @@ class GameRunToAnthill(QWidget):
             self.messageInit()
         else:
             self.timer.stop()
+            self.animation_timer.stop()
             self.field.focus_point = QPoint(0, 0)
             self.message.noMessage()
 
@@ -55,8 +58,8 @@ class GameRunToAnthill(QWidget):
     def fieldInit(self):
         self.field = RunToAnthillSettings()
         self.field.height = 500
-        self.field.width = 1000
-        self.field.number_of_barriers = 20
+        self.field.width = 8000
+        self.field.number_of_barriers = 100
         self.field.start_line_x = 50
         self.field.finish_line_x = self.field.width - 80
         self.field.number_of_background_pictures = 0
@@ -80,6 +83,10 @@ class GameRunToAnthill(QWidget):
         self.timer = QTimer(self)
         self.timer.setInterval(10)
         QObject.connect(self.timer, SIGNAL('timeout()'), self.doGameStep)
+
+        self.animation_timer = QTimer(self)
+        self.animation_timer.setInterval(20)
+        QObject.connect(self.animation_timer, SIGNAL('timeout()'), self.proccessAnimatedAntObjects)
 
     def messageInit(self):
         self.message = AntMessage()
@@ -114,31 +121,47 @@ class GameRunToAnthill(QWidget):
         self.borders.width = 64
         self.borders.append(AntObjectsWithWorkZoneByXOptimisation())
         self.borders.append(AntObjectsWithWorkZoneByXOptimisation())
+        ant_objects_list = list()
         for x in range(4):
-            self.borders[0].addPicture('.\\pictures\\borders\\border_' + str(x) + '.bmp')
-            self.borders[1].addPicture('.\\pictures\\borders\\border_' + str(x) + '.bmp')
+            ant_objects_list.append(AntObject())
+            ant_objects_list[-1].picture = QPixmap()
+            ant_objects_list[-1].picture.load('.\\pictures\\borders\\border_' + str(x) + '.bmp')
 
         for x in range(0, self.field.width, self.borders.width):
-            self.borders[0].addObject(AntObject(QPoint(x, 0)), 0)
-            self.borders[1].addObject(AntObject(QPoint(x, self.field.height - self.borders.height)), 1)
-        self.borders[0].setRandomPictures()
-        self.borders[1].setRandomPictures()
+            ant_object = random.choice(ant_objects_list)
+            ant_object.point = QPoint(x, 0)
+            self.borders[0].addObject(ant_object)
+            ant_object.point = QPoint(x, self.field.height - self.borders.height)
+            self.borders[1].addObject(ant_object)
 
     def barriersInit(self):
         self.barriers = AntObjectsWithWorkZoneByXOptimisation()
-        self.barriers.addPicture('.\\pictures\\barriers\\box.bmp')
-        self.barriers.addPicture('.\\pictures\\barriers\\heisenberg.bmp')
-        self.barriers.createRandomObjects(self.field.number_of_barriers,
+
+        ant_objects_list = list()
+
+        ant_objects_list.append(AntObject())
+        ant_objects_list[-1].picture.load('.\\pictures\\barriers\\box.bmp')
+        ant_objects_list.append(AntObject())
+        ant_objects_list[-1].picture.load('.\\pictures\\barriers\\heisenberg.bmp')
+
+        ant_objects_list.append(AntObjectAnimation())
+        for x in range(30):
+            ant_objects_list[-1].addFrame('.\\pictures\\barriers\\burst\\burst_' + str(x) + '.bmp', 8)
+
+        self.barriers.addRandomObjects(self.field.number_of_barriers, ant_objects_list,
                                           self.field.start_line_x + self.field.distance_before_first_barrier,
                                           self.field.finish_line_x,
                                           self.borders.height, self.field.height - self.borders.height)
 
     def backgroundInit(self):
         self.background_pictures = AntObjectsWithWorkZoneByXOptimisation()
-        self.background_pictures.addPicture('.\\pictures\\background\\grass.png')
+
+        ant_objects_list = list()
         for index in range(9):
-            self.background_pictures.addPicture('.\\pictures\\background\\leaf_' + str(index) + '.png')
-        self.background_pictures.createRandomObjects(self.field.number_of_background_pictures,
+            ant_objects_list.append(AntObject())
+            ant_objects_list[-1].picture.load('.\\pictures\\background\\leaf_' + str(index) + '.png')
+
+        self.background_pictures.addRandomObjects(self.field.number_of_background_pictures, ant_objects_list,
                                                      0, self.field.finish_line_x,
                                                      self.borders.height, self.field.height - self.borders.height)
 
@@ -210,7 +233,17 @@ class GameRunToAnthill(QWidget):
         self.paintBorders(painter)
         self.paintMessage(painter)
 
+    #--------------------- animation ---------------------
+
+    def __modifier(self, ant_object):
+        if ant_object.isAnimated():
+            ant_object.setNextFrame()
+
+    def proccessAnimatedAntObjects(self):
+        self.barriers.modifyWorkZone(self.__modifier)
+
     #--------------------- updating ---------------------
+
 
     def updateFieldFocusPoint(self):
         for ant in self.ants:
@@ -218,10 +251,6 @@ class GameRunToAnthill(QWidget):
                     < self.field.critical_distance_before_screen_end:
                 self.field.focus_point.setX(self.field.focus_point.x() - self.field.screen_movement_step)
                 return
-            """if (ant.point.x() + self.field.focus_point.x()) \
-                    < self.field.critical_distance_before_screen_end:
-                self.field.focus_point.setX(self.field.focus_point.x() + self.field.field_motion_step)
-                return"""
 
     def updateConstants(self):
         self.field.critical_distance_before_screen_end = self.width() // 5 * 2
@@ -258,6 +287,7 @@ class GameRunToAnthill(QWidget):
         self.message.sendMessage('second_' + str(seconds_before_start))
         if seconds_before_start == 0:
             self.timer.start()
+            self.animation_timer.start()
             QTimer.singleShot(1000, self.message.noMessage)
         self.repaint()
 
@@ -278,6 +308,7 @@ class GameRunToAnthill(QWidget):
 
     def stop(self):
         self.timer.stop()
+        self.animation_timer.stop()
         self.message.sendMessage('pause')
         self.repaint()
 
